@@ -1,5 +1,7 @@
 # tenant-management
 
-docker compose up --build
-docker compose up --watch
+new package/dependency, or edit to dockerfile/compose file:
 docker compose up --build --watch
+
+changes to source code:
+docker compose watch
