@@ -1,0 +1,44 @@
+services:
+  backend:
+    build: backend/.
+    container_name: backend
+    command: npm start
+    ports:
+      - 3000:3000
+    depends_on:
+      database:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: rebuild
+          path: package.json 
+        - action: sync+restart
+          path: ./
+          target: /app
+          initial_sync: true
+          ignore:
+            - node_modules/
+  
+  database:
+    build: database/.
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql
+    
+volumes:
+  pgdata:
+
+  
+  
