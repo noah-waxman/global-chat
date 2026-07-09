@@ -1,16 +1,17 @@
-# tenant-management
+# Global Chat
 
-new package/dependency, or edit to dockerfile/compose file:
+## Build and run the application
+
+To build and start the application:
+
+```bash
 docker compose up --build --watch
+```
 
-changes to source code:
+## Apply source code changes
+
+If the application is already running and you only want to watch for source code changes:
+
+```bash
 docker compose watch
-
-ideas:
-one-on-one messaging
-group chats
-file sharing
-online/offline status
-message history
-push notifications
-video/voice calling
+```
