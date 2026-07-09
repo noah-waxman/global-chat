@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+@import "tailwindcss";
+
+html {
+  font-size: 62.5%;
+  box-sizing: border-box;
+}
+
+@theme {
+  --font-inter: 'Inter', sans-serif;
+
+  --color-primary-a0: #9b10e0;
+  --color-primary-a10: #a53ee5;
+  --color-primary-a20: #af5ae9;
+  --color-primary-a30: #b971ee;
+  --color-primary-a40: #c387f1;
+  --color-primary-a50: #cd9cf5;
+
+  /* iOS system blue */
+  --color-ios-blue-a0: #0a84ff;
+  --color-ios-blue-a10: #2f95ff;
+  --color-ios-blue-a20: #5aa9ff;
+  --color-ios-blue-a30: #85bcff;
+  --color-ios-blue-a40: #b0d0ff;
+  --color-ios-blue-a50: #d6e7ff;
+
+  --color-surface-a0: #121212;
+  --color-surface-a10: #252525;
+  --color-surface-a20: #393939;
+  --color-surface-a30: #4f4f4f;
+  --color-surface-a40: #666;
+  --color-surface-a50: #7d7d7d;
+
+  --color-surface-tonal-a0: #1e1724;
+  --color-surface-tonal-a10: #312a37;
+  --color-surface-tonal-a20: #443e4a;
+  --color-surface-tonal-a30: #59545e;
+  --color-surface-tonal-a40: #6f6a74;
+  --color-surface-tonal-a50: #858189;
+}
+@layer base {
+  body {
+    @apply bg-surface-a0;
+  }
+}
