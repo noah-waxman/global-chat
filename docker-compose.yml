@@ -2,6 +2,8 @@ services:
   backend:
     build: backend/.
     container_name: backend
+    env_file:
+      - .env
     command: npm start
     ports:
       - "${BACKEND_PORT}:3000"
@@ -22,12 +24,14 @@ services:
   database:
     build: database/.
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydatabase
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $$DB_USER -d $$DB_NAME"]
       interval: 10s
       timeout: 5s
       retries: 5

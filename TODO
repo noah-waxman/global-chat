@@ -1,0 +1,1 @@
+Dockerfile uses different ENV values than .env. Maybe need to make docker.env file?
