@@ -7,6 +7,9 @@ services:
     command: npm run dev -- --host 0.0.0.0
     ports:
       - "${FRONTEND_PORT}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
     develop:
       watch:
         - action: rebuild
@@ -28,17 +31,27 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "require(''http'').get(''http://localhost:3000/health'', r => process.exit(r.statusCode === 200 ? 0 : 1))"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     develop:
       watch:
         - action: rebuild
-          path: package.json 
+          path: package.json
         - action: sync+restart
           path: ./
           target: /app
           initial_sync: true
           ignore:
             - node_modules/
-  
+
   database:
     build: database/.
     restart: unless-stopped
@@ -58,9 +71,6 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql
-    
+
 volumes:
   pgdata:
-
-  
-  
