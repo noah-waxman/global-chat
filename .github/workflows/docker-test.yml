@@ -10,5 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build DOcker images
-        run: docker compose build
+      - name: Create CI .env
+        run: |
+          echo "FRONTEND_PORT=5173" >> .env
+          echo "BACKEND_PORT=3000" >> .env
+          echo "DB_USER=test" >> .env
+          echo "DB_PASS=test" >> .env
+          echo "DB_NAME=test" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_HOST=database" >> .env
+          echo "SESSION_SECRET=SECRET" >> .env
+          echo "VITE_BACKEND_URL=backend" >> .env
+      - name: Build Docker images
+        run: docker compose -f docker-compose.test.yml build
