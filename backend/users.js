@@ -23,6 +23,7 @@ const getUserByEmail = async (email) => {
       `
             SELECT * FROM Users u
             WHERE u.email = $1
+            RETURNING id, display_name, email
             `,
       [email],
     );
