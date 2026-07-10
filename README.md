@@ -14,3 +14,8 @@ online/offline status
 message history
 push notifications
 video/voice calling
+
+docker compose \
+-f docker-compose.yml \
+-f docker-compose.dev.yml \
+up

@@ -22,4 +22,18 @@ jobs:
           echo "SESSION_SECRET=SECRET" >> .env
           echo "VITE_BACKEND_URL=backend" >> .env
       - name: Build Docker images
-        run: docker compose -f docker-compose.test.yml build
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml build
+
+      - name: Start services
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+
+      - name: Wait for backend health
+        run: |
+          until curl --fail http://localhost:3000/health; do
+            echo "Waiting for backend..."
+            sleep 5
+          done
+
+      - name: Shutdown
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down
