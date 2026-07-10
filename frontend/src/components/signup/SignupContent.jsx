@@ -1,16 +1,23 @@
-export default function LoginContent({
-	handleLoginSubmit,
+export default function SignupContent({
+	handleSignupSubmit,
 	setEmail,
 	setPassword,
+	setDisplayName,
 	toggleShowSignup,
 }) {
 	return (
 		<div className="flex flex-col items-center">
 			<p className="text-5xl md:text-6xl text-white font-medium pb-10 select-none">
-				Welcome
+				Sign Up
 			</p>
 			<div className="w-full">
-				<form onSubmit={handleLoginSubmit}>
+				<form onSubmit={handleSignupSubmit}>
+					<input
+						className="w-full bg-surface-a20 placeholder:text-white/60 text-white text-2xl rounded-xl px-3 py-5 mb-10 border border-transparent transition duration-300 ease focus:outline-none focus:border focus:border-white shadow-sm"
+						placeholder="display name"
+						type="username"
+						onChange={(e) => setDisplayName(e.target.value)}
+					/>
 					<input
 						className="w-full bg-surface-a20 placeholder:text-white/60 text-white text-2xl rounded-xl px-3 py-5 mb-10 border border-transparent transition duration-300 ease focus:outline-none focus:border focus:border-white shadow-sm"
 						placeholder="email address"
@@ -24,22 +31,15 @@ export default function LoginContent({
 						onChange={(e) => setPassword(e.target.value)}
 					/>
 					<button className="bg-primary-a0 hover:bg-primary-a10 border-b-4 border-primary-a10 hover:border-primary-a20 w-full mb-3 text-white text-2xl font-bold py-4 px-4 rounded-2xl hover:cursor-pointer transition-colors duration-300 select-none">
-						Login
+						Sign Up
 					</button>
 				</form>
 			</div>
-			{/* divider */}
-			<div className="flex flex-row w-full items-center">
-				<hr className="flex-1 border-t border-surface-a30 mx-4" />
-				<p className="text-white text-xl my-4">OR</p>
-				<hr className="flex-1 border-t border-surface-a30 mx-4" />
-			</div>
-			{/* Signup */}
 			<p
 				onClick={() => toggleShowSignup()}
-				className="text-ios-blue-a0 text-2xl hover:cursor-pointer select-none"
+				className="text-ios-blue-a0 text-2xl mt-5 hover:cursor-pointer select-none"
 			>
-				Sign Up
+				Go Back
 			</p>
 		</div>
 	);

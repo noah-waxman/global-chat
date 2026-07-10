@@ -1,1 +1,2 @@
-Dockerfile uses different ENV values than .env. Maybe need to make docker.env file?
+/auth/me should probably return user info
+we should modify register and login endpoints to return specific user info
