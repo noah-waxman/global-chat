@@ -11,3 +11,5 @@ RUN npm install
 USER app
 
 COPY --chown=app:app . /app
+
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]

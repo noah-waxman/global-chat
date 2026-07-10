@@ -11,3 +11,5 @@ RUN npm install
 USER app
 
 COPY --chown=app:app . /app
+
+CMD ["node", "index.js"]
