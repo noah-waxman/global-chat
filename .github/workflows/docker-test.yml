@@ -44,6 +44,12 @@ jobs:
               sleep 3
             done
           '
+
+      - name: Smoke test endpoints
+        run: |
+          curl -sf http://localhost:3000/health
+          curl -sf http://localhost:5173
+
       - name: Tear down
         if: always()
         run: docker compose down -v
