@@ -1,6 +1,4 @@
-const { DB_HOST, DB_NAME, DB_PASS, DB_USER } = require("./constants");
-const pgp = require("pg-promise")();
-const db = pgp(`postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}`);
+const db = require("./db");
 
 const insertUser = async (display_name, hashedPassword, email) => {
   try {
@@ -21,10 +19,9 @@ const getUserByEmail = async (email) => {
   try {
     const user = await db.oneOrNone(
       `
-            SELECT * FROM Users u
-            WHERE u.email = $1
-            RETURNING id, display_name, email
-            `,
+      SELECT * FROM Users u
+      WHERE u.email = $1
+      `,
       [email],
     );
 
