@@ -73,3 +73,37 @@ describe("POST /auth/login", () => {
     });
   });
 });
+
+describe("GET /auth/me", () => {
+  describe("given a get request after logging in", () => {
+    test("should response with user authenticated and user id", async () => {
+      const agent = request.agent(app); // persist cookies
+
+      await agent
+        .post("/auth/register")
+        .send({
+          displayName: "test",
+          email: "test@example.com",
+          password: "password",
+        })
+        .expect(201);
+
+      const response = await agent.get("/auth/me").expect(200);
+
+      expect(response.body.isAuthenticated).toBe(true);
+      expect(response.body.user).toBeDefined();
+    });
+  });
+
+  describe("given a get request without logging in", () => {
+    test("should respond with user not authenticated", async () => {
+      const response = await request(app).get("/auth/me").expect(401);
+
+      expect(response.body.isAuthenticated).toBe(false);
+      expect(response.body.message).toBe("User is not authenticated");
+
+      console.log(response.headers);
+      console.log(response.body);
+    });
+  });
+});
