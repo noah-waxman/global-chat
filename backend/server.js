@@ -148,8 +148,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+app.get("/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+
+    res.status(200).json({
+      status: "ok",
+      database: "connected",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(503).json({
+      status: "error",
+      database: "unavailable",
+    });
+  }
 });
 
 app.listen(port, () => {
