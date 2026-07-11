@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-sanity-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +73,63 @@ jobs:
       - name: Show frontend logs
         if: failure()
         run: docker compose logs frontend
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v2
+        with:
+          version: latest
+
+      - name: Create CI .env for docker compose
+        run: |
+          echo "DB_USER=test" >> .env
+          echo "DB_PASS=test" >> .env
+          echo "DB_NAME=test" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_HOST=database" >> .env
+
+      - name: Start database
+        run: docker compose up -d database
+
+      - name: Wait for database to be healthy
+        run: |
+          timeout 60 bash -c '
+            until [ "$(docker inspect -f "{{.State.Health.Status}}" database)" = "healthy" ]; do
+              sleep 2
+            done
+          '
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json # adjust path if needed
+
+      - name: Install dependencies
+        working-directory: backend # adjust if package.json is at repo root
+        run: npm ci
+
+      - name: Create .env.test for Jest
+        working-directory: backend
+        run: |
+          echo "DB_HOST=localhost" >> .env.test
+          echo "DB_USER=test" >> .env.test
+          echo "DB_PASS=test" >> .env.test
+          echo "DB_PORT=5432" >> .env.test
+          echo "DB_NAME=test" >> .env.test
+          echo "SESSION_SECRET=SECRET" >> .env.test
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test
 
       - name: Tear down
         if: always()
