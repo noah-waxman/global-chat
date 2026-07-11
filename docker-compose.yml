@@ -60,6 +60,7 @@ services:
 
   database:
     build: database/.
+    container_name: database
     restart: unless-stopped
     env_file:
       - .env
