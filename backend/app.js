@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt");
 const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const cors = require("cors");
-const { DB_HOST, DB_NAME, DB_PASS, DB_USER } = require("./constants");
 const db = require("./db");
 const users = require("./users");
 const app = express();
@@ -23,16 +22,9 @@ app.use(
 app.use(
   session({
     store: new pgSession({
-      conObject: {
-        host: DB_HOST,
-        database: DB_NAME,
-        user: DB_USER,
-        password: DB_PASS,
-      },
-
+      pool: db.$pool,
       createTableIfMissing: true,
     }),
-
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
