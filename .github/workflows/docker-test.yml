@@ -66,6 +66,14 @@ jobs:
             -o login.json
           cat login.json
 
+      - name: Show backend logs
+        if: failure()
+        run: docker compose logs backend
+
+      - name: Show frontend logs
+        if: failure()
+        run: docker compose logs frontend
+
       - name: Tear down
         if: always()
         run: docker compose down -v
