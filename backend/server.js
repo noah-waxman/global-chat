@@ -4,6 +4,7 @@ const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const cors = require("cors");
 const { DB_HOST, DB_NAME, DB_PASS, DB_USER } = require("./constants");
+const db = require("./db");
 const users = require("./users");
 const app = express();
 const port = 3000;
@@ -150,19 +151,11 @@ app.use((err, req, res, next) => {
 
 app.get("/health", async (req, res) => {
   try {
-    await pool.query("SELECT 1");
-
-    res.status(200).json({
-      status: "ok",
-      database: "connected",
-    });
-  } catch (err) {
-    console.error(err);
-
-    res.status(503).json({
-      status: "error",
-      database: "unavailable",
-    });
+    await db.one("SELECT 1");
+    res.status(200).json({ status: "OK", db: "connected" });
+  } catch (error) {
+    console.error("Health check DB error:", error.message);
+    res.status(503).json({ status: "ERROR", db: "disconnected" });
   }
 });
 
