@@ -22,4 +22,13 @@ jobs:
           echo "SESSION_SECRET=SECRET" >> .env
           echo "VITE_BACKEND_URL=backend" >> .env
       - name: Build Docker images
-        run: docker compose -f docker-compose.test.yml build
+        run: docker compose build
+      - name: Start stack and wait for healthy
+        run: |
+          docker compose up -d
+          # Wait for services to report healthy, fail fast if they don't
+          timeout 90 bash -c '
+            until [ "$(docker inspect -f "{{.State.Health.Status}}" backend 2>/dev/null)" = "healthy" ]; do
+              sleep 3
+            done
+          '
