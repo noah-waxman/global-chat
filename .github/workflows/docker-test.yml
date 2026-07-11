@@ -48,7 +48,23 @@ jobs:
       - name: Smoke test endpoints
         run: |
           curl -sf http://localhost:3000/health
-          curl -sf http://localhost:5173
+
+          # Register a test user, save cookies for session
+          curl -sf -c cookies.txt -X POST http://localhost:3000/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"displayName":"CI Test","email":"citest@example.com","password":"testpass123"}' \
+            -o register.json
+          cat register.json
+
+          # Confirm session persisted — /auth/me should now say authenticated
+          curl -sf -b cookies.txt http://localhost:3000/auth/me | grep '"isAuthenticated":true'
+
+          # Login with same credentials
+          curl -sf -c cookies2.txt -X POST http://localhost:3000/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"citest@example.com","password":"testpass123"}' \
+            -o login.json
+          cat login.json
 
       - name: Tear down
         if: always()

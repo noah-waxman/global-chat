@@ -141,14 +141,6 @@ app.get("/auth/me", (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error("Server Error:", err.message);
-
-  return res.status(500).json({
-    error: "Something went wrong on our server. Please try again later.",
-  });
-});
-
 app.get("/health", async (req, res) => {
   try {
     await db.one("SELECT 1");
@@ -157,6 +149,14 @@ app.get("/health", async (req, res) => {
     console.error("Health check DB error:", error.message);
     res.status(503).json({ status: "ERROR", db: "disconnected" });
   }
+});
+
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err.message);
+
+  return res.status(500).json({
+    error: "Something went wrong on our server. Please try again later.",
+  });
 });
 
 app.listen(port, () => {
