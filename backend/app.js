@@ -7,11 +7,19 @@ const db = require("./db");
 const users = require("./users");
 const app = express();
 
+const { createServer } = require("node:http");
+const { join } = require("node:path");
+const { Server } = require("socket.io");
+
+const server = createServer(app);
+const io = new Server(server, {
+  cors: { origin: "http://localhost:5173", credentials: true },
+});
+
 app.use(express.json());
 
 app.use(
   cors({
-    // Replace with your exact frontend URL (no trailing slash)
     origin: "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -19,26 +27,52 @@ app.use(
   }),
 );
 
-app.use(
-  session({
-    store: new pgSession({
-      pool: db.$pool,
-      createTableIfMissing: false,
-    }),
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      path: "/",
-      httpOnly: true,
-      secure: false,
-      maxAge: 3600000,
-    },
+// Define session middleware here
+const sessionMiddleware = session({
+  store: new pgSession({
+    pool: db.$pool,
+    createTableIfMissing: false,
   }),
-);
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    path: "/",
+    httpOnly: true,
+    secure: false,
+    maxAge: 3600000,
+  },
+});
+
+// Attach session middleware to Express
+app.use(sessionMiddleware);
+
+io.engine.use(sessionMiddleware);
 
 app.get("/", (req, res) => {
   res.send("Hello");
+});
+
+io.on("connection", (socket) => {
+  const session = socket.request.session;
+
+  console.log(session);
+
+  if (!session || !session.user) {
+    console.error("Unauthenticated socket tried to connect.");
+    return socket.disconnect(true);
+  }
+
+  console.log(`Authenticated user connected: ${session.user.displayName}`);
+
+  socket.on("send_message", (data) => {
+    socket.broadcast.emit("receive_message", data);
+  });
+
+  // Handle user disconnects
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
 });
 
 app.post("/auth/register", async (req, res, next) => {
@@ -57,7 +91,13 @@ app.post("/auth/register", async (req, res, next) => {
       if (err) {
         return next(err);
       }
-      req.session.userId = newUser.id;
+
+      req.session.user = {
+        id: newUser.id,
+        displayName: newUser.display_name,
+        email: newUser.email,
+      };
+
       req.session.save(function (err) {
         if (err) {
           return next(err);
@@ -99,18 +139,18 @@ app.post("/auth/login", async (req, res, next) => {
         return next(err);
       }
 
-      req.session.userId = user.id;
+      req.session.user = {
+        id: user.id,
+        displayName: user.display_name,
+        email: user.email,
+      };
 
       req.session.save((err) => {
         if (err) {
           return next(err);
         }
 
-        return res.status(200).json({
-          id: user.id,
-          displayName: user.display_name,
-          email: user.email,
-        });
+        return res.status(200).json(req.session.user);
       });
     });
   } catch (error) {
@@ -119,10 +159,10 @@ app.post("/auth/login", async (req, res, next) => {
 });
 
 app.get("/auth/me", (req, res) => {
-  if (req.session && req.session.userId) {
+  if (req.session && req.session.user) {
     return res.status(200).json({
       isAuthenticated: true,
-      user: req.session.userId,
+      user: req.session.user,
     });
   }
 
@@ -150,4 +190,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-module.exports = app;
+module.exports = { app, server };

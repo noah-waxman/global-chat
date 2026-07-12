@@ -31,4 +31,15 @@ const getUserByEmail = async (email) => {
   }
 };
 
-module.exports = { insertUser, getUserByEmail };
+const getUserById = async (id) => {
+  try {
+    return db.oneOrNone(
+      "SELECT id, display_name, email FROM Users WHERE id = $1",
+      [id],
+    );
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = { insertUser, getUserByEmail, getUserById };

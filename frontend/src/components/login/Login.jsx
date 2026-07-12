@@ -15,9 +15,11 @@ export default function Login() {
 	const { user, setUser, loading } = useAuth();
 	const navigate = useNavigate();
 
-	if (user) {
-		navigate('/');
-	}
+	useEffect(() => {
+		if (user) {
+			navigate('/');
+		}
+	}, [user, navigate]);
 
 	const handleLoginSubmit = async (e) => {
 		e.preventDefault();
