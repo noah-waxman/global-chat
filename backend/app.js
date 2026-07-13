@@ -182,16 +182,9 @@ app.post("/messages", async (req, res, next) => {
 
 app.get("/auth/me", (req, res) => {
   if (req.session && req.session.user) {
-    return res.status(200).json({
-      isAuthenticated: true,
-      user: req.session.user,
-    });
+    return res.status(200).json(req.session.user);
   }
-
-  return res.status(401).json({
-    isAuthenticated: false,
-    message: "User is not authenticated",
-  });
+  return res.status(401).json({ message: "User is not authenticated" });
 });
 
 app.get("/health", async (req, res) => {

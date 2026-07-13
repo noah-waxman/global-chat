@@ -90,19 +90,15 @@ describe("GET /auth/me", () => {
         .expect(201);
 
       const response = await agent.get("/auth/me").expect(200);
-      expect(response.body.isAuthenticated).toBe(true);
-      expect(response.body.user).toBeDefined();
-      expect(response.body.user.email).toBe("test@example.com");
-      expect(response.body.user.displayName).toBe("test");
-      expect(response.body.user.id).toBeDefined();
+      expect(response.body.email).toBe("test@example.com");
+      expect(response.body.displayName).toBe("test");
+      expect(response.body.id).toBeDefined();
     });
   });
 
   describe("given a get request without logging in", () => {
-    test("should respond with user not authenticated", async () => {
+    test("given a get request without logging in", async () => {
       const response = await request(app).get("/auth/me").expect(401);
-
-      expect(response.body.isAuthenticated).toBe(false);
       expect(response.body.message).toBe("User is not authenticated");
     });
   });
