@@ -90,7 +90,6 @@ describe("GET /auth/me", () => {
         .expect(201);
 
       const response = await agent.get("/auth/me").expect(200);
-      console.log(response.body);
       expect(response.body.isAuthenticated).toBe(true);
       expect(response.body.user).toBeDefined();
       expect(response.body.user.email).toBe("test@example.com");
@@ -105,9 +104,40 @@ describe("GET /auth/me", () => {
 
       expect(response.body.isAuthenticated).toBe(false);
       expect(response.body.message).toBe("User is not authenticated");
+    });
+  });
+});
 
-      console.log(response.headers);
-      console.log(response.body);
+describe("POST /messages", () => {
+  describe("given a post request with a message text", () => {
+    test("should respond with a message", async () => {
+      const agent = request.agent(app);
+
+      await agent
+        .post("/auth/register")
+        .send({
+          displayName: "test",
+          email: "test@example.com",
+          password: "password",
+        })
+        .expect(201);
+
+      const response = await agent.post("/messages").send({
+        message_text: "hi",
+      });
+
+      expect(response.body.id).toBeDefined();
+    });
+  });
+
+  describe("given a post request without being authenticated", () => {
+    test("should respond with unauthorized", async () => {
+      const response = await request(app)
+        .post("/messages")
+        .send({ message_text: "test" })
+        .expect(401);
+
+      expect(response.body.error).toBe("Not authenticated");
     });
   });
 });

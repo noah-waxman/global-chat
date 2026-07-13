@@ -43,10 +43,20 @@ export default function Home() {
 		}
 	};
 
-	const sendMessage = () => {
+	const sendMessage = async () => {
 		if (message.trim()) {
 			socket.emit('send_message', message);
 			setChatLog((prev) => [...prev, `${user.displayName} ${message}`]);
+			const response = await fetch('/messages', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ message_text: message }),
+				credentials: 'include',
+			});
+			if (!response.ok) {
+				const error = await response.json();
+				alert(error || 'failed to send message');
+			}
 			setMessage('');
 		}
 	};

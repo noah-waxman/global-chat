@@ -5,6 +5,7 @@ const pgSession = require("connect-pg-simple")(session);
 const cors = require("cors");
 const db = require("./db");
 const users = require("./users");
+const messages = require("./messages");
 const app = express();
 
 const { createServer } = require("node:http");
@@ -102,7 +103,7 @@ app.post("/auth/register", async (req, res, next) => {
         if (err) {
           return next(err);
         }
-        return res.status(201).json(newUser);
+        return res.status(201).json(req.session.user);
       });
     });
   } catch (error) {
@@ -155,6 +156,27 @@ app.post("/auth/login", async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+app.post("/messages", async (req, res, next) => {
+  try {
+    const { message_text } = req.body;
+
+    if (!req.session || !req.session.user) {
+      return res.status(401).json({
+        error: "Not authenticated",
+      });
+    }
+
+    const message = await messages.insertMessage(
+      req.session.user.id,
+      message_text,
+    );
+
+    return res.status(201).json(message);
+  } catch (err) {
+    next(err);
   }
 });
 
