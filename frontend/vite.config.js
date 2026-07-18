@@ -16,6 +16,10 @@ export default defineConfig(({ mode }) => {
 					target: `http://${backendUrl}:3000`,
 					changeOrigin: true,
 				},
+				'/message': {
+					target: `http://${backendUrl}:3000`,
+					changeOrigin: true,
+				},
 			},
 		},
 	};

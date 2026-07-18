@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../app");
+const { app } = require("../app");
 const db = require("../db");
 
 afterAll(async () => {
@@ -46,10 +46,13 @@ describe("POST /auth/login", () => {
         })
         .expect(201);
 
-      const response = await request(app).post("/auth/login").send({
-        email: "test@example.com",
-        password: "password",
-      });
+      const response = await request(app)
+        .post("/auth/login")
+        .send({
+          email: "test@example.com",
+          password: "password",
+        })
+        .expect(200);
 
       const userId = response.body["id"];
 
@@ -68,15 +71,13 @@ describe("POST /auth/login", () => {
       expect(displayName).toBe("test");
       expect(cookies).toBeDefined();
       expect(sessionCookie).toBeDefined();
-
-      console.log(response.headers);
     });
   });
 });
 
 describe("GET /auth/me", () => {
   describe("given a get request after logging in", () => {
-    test("should response with user authenticated and user id", async () => {
+    test("should respond with user authenticated and user id", async () => {
       const agent = request.agent(app); // persist cookies
 
       await agent
@@ -89,21 +90,50 @@ describe("GET /auth/me", () => {
         .expect(201);
 
       const response = await agent.get("/auth/me").expect(200);
-
-      expect(response.body.isAuthenticated).toBe(true);
-      expect(response.body.user).toBeDefined();
+      expect(response.body.email).toBe("test@example.com");
+      expect(response.body.displayName).toBe("test");
+      expect(response.body.id).toBeDefined();
     });
   });
 
   describe("given a get request without logging in", () => {
-    test("should respond with user not authenticated", async () => {
+    test("given a get request without logging in", async () => {
       const response = await request(app).get("/auth/me").expect(401);
-
-      expect(response.body.isAuthenticated).toBe(false);
       expect(response.body.message).toBe("User is not authenticated");
+    });
+  });
+});
 
-      console.log(response.headers);
-      console.log(response.body);
+describe("POST /messages", () => {
+  describe("given a post request with a message text", () => {
+    test("should respond with a message", async () => {
+      const agent = request.agent(app);
+
+      await agent
+        .post("/auth/register")
+        .send({
+          displayName: "test",
+          email: "test@example.com",
+          password: "password",
+        })
+        .expect(201);
+
+      const response = await agent.post("/messages").send({
+        message_text: "hi",
+      });
+
+      expect(response.body.id).toBeDefined();
+    });
+  });
+
+  describe("given a post request without being authenticated", () => {
+    test("should respond with unauthorized", async () => {
+      const response = await request(app)
+        .post("/messages")
+        .send({ message_text: "test" })
+        .expect(401);
+
+      expect(response.body.error).toBe("Not authenticated");
     });
   });
 });

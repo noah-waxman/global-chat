@@ -56,8 +56,8 @@ jobs:
             -o register.json
           cat register.json
 
-          # Confirm session persisted — /auth/me should now say authenticated
-          curl -sf -b cookies.txt http://localhost:3000/auth/me | grep '"isAuthenticated":true'
+          # Confirm session persisted — /auth/me should now return the user object
+          curl -sf -b cookies.txt http://localhost:3000/auth/me | grep '"email":"citest@example.com"'
 
           # Login with same credentials
           curl -sf -c cookies2.txt -X POST http://localhost:3000/auth/login \

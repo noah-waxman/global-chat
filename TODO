@@ -1,2 +1,1 @@
-/auth/me should probably return user info
-we should modify register and login endpoints to return specific user info
+/auth/me should be consistent with the user return info as login and register
