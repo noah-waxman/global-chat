@@ -21,4 +21,41 @@ const getMessageById = async (id) => {
   }
 };
 
-module.exports = { insertMessage, getMessageById };
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+
+// Returns messages older than `before` (cursor), newest-first, capped to `limit`.
+// Pass no `before` to get the most recent page.
+const getMessages = async (limit = DEFAULT_LIMIT, before = null) => {
+  const safeLimit = Math.min(
+    Math.max(1, Number(limit) || DEFAULT_LIMIT),
+    MAX_LIMIT,
+  );
+  try {
+    if (before) {
+      return await db.any(
+        `SELECT m.id, m.created_at, m.created_by, m.message_text,
+                u.display_name
+         FROM Messages m
+         JOIN Users u ON u.id = m.created_by
+         WHERE m.id < $1
+         ORDER BY m.id DESC
+         LIMIT $2`,
+        [before, safeLimit],
+      );
+    }
+    return await db.any(
+      `SELECT m.id, m.created_at, m.created_by, m.message_text,
+              u.display_name
+       FROM Messages m
+       JOIN Users u ON u.id = m.created_by
+       ORDER BY m.id DESC
+       LIMIT $1`,
+      [safeLimit],
+    );
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = { insertMessage, getMessageById, getMessages };

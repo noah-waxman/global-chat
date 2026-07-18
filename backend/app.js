@@ -200,6 +200,29 @@ app.post("/messages", async (req, res, next) => {
   }
 });
 
+app.get(
+  "/messages",
+  requirePermission("messages", "read"),
+  async (req, res, next) => {
+    try {
+      const { limit, before } = req.query;
+
+      let beforeId = null;
+      if (before !== undefined) {
+        beforeId = Number(before);
+        if (!Number.isInteger(beforeId) || beforeId <= 0) {
+          return res.status(400).json({ error: "Invalid 'before' cursor" });
+        }
+      }
+
+      const rows = await messages.getMessages(limit, beforeId);
+      return res.status(200).json(rows);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 app.get("/auth/me", (req, res) => {
   if (req.session && req.session.user) {
     return res.status(200).json(req.session.user);
