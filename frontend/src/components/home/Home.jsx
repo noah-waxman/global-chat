@@ -2,12 +2,11 @@ import { useAuth } from '../auth/Auth';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useState, useEffect, useRef, useMemo } from 'react';
-
 const socket = io({
 	withCredentials: true,
 	autoConnect: false,
 });
-
+const PAGE_SIZE = 50;
 // Deterministic accent color per user, based on name
 const AVATAR_HUES = [
 	'bg-rose-500',
@@ -37,13 +36,19 @@ function formatTime(ts) {
 		minute: '2-digit',
 	});
 }
-
 export default function Home() {
 	const { user, loading } = useAuth();
 	const navigate = useNavigate();
 	const [message, setMessage] = useState('');
 	const [chatLog, setChatLog] = useState([]);
+	const [oldestId, setOldestId] = useState(null);
+	const [hasMore, setHasMore] = useState(false);
+	const [loadingMore, setLoadingMore] = useState(false);
 	const scrollRef = useRef(null);
+	// Tracks whether the next chatLog change came from prepending older
+	// messages (load more) vs appending a new one (should auto-scroll down).
+	const isPrependingRef = useRef(false);
+	const prevScrollHeightRef = useRef(0);
 
 	useEffect(() => {
 		if (loading) return;
@@ -52,7 +57,7 @@ export default function Home() {
 			return;
 		}
 		let cancelled = false;
-		fetch('/messages', { credentials: 'include' })
+		fetch(`/messages?limit=${PAGE_SIZE}`, { credentials: 'include' })
 			.then((res) => {
 				if (!res.ok) throw new Error('Failed to load messages');
 				return res.json();
@@ -60,9 +65,10 @@ export default function Home() {
 			.then((data) => {
 				if (cancelled) return;
 				setChatLog(data.slice().reverse());
+				setOldestId(data.length ? data[data.length - 1].id : null);
+				setHasMore(data.length === PAGE_SIZE);
 			})
 			.catch((err) => console.error(err));
-
 		socket.connect();
 		socket.on('receive_message', (data) => {
 			setChatLog((prev) => [...prev, data]);
@@ -78,13 +84,43 @@ export default function Home() {
 		};
 	}, [user, loading, navigate]);
 
-	// Auto-scroll to bottom on new messages
+	// Auto-scroll to bottom on new messages, but preserve scroll offset
+	// when older messages were just prepended via "Load more".
 	useEffect(() => {
-		scrollRef.current?.scrollTo({
-			top: scrollRef.current.scrollHeight,
-			behavior: 'smooth',
-		});
+		const el = scrollRef.current;
+		if (!el) return;
+		if (isPrependingRef.current) {
+			el.scrollTop = el.scrollHeight - prevScrollHeightRef.current;
+			isPrependingRef.current = false;
+			return;
+		}
+		el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
 	}, [chatLog]);
+
+	const loadMoreMessages = async () => {
+		if (!oldestId || loadingMore || !hasMore) return;
+		setLoadingMore(true);
+		try {
+			const res = await fetch(
+				`/messages?limit=${PAGE_SIZE}&before=${oldestId}`,
+				{ credentials: 'include' }
+			);
+			if (!res.ok) throw new Error('Failed to load more messages');
+			const data = await res.json();
+			if (data.length > 0) {
+				prevScrollHeightRef.current = scrollRef.current?.scrollHeight ?? 0;
+				isPrependingRef.current = true;
+				setChatLog((prev) => [...data.slice().reverse(), ...prev]);
+				setOldestId(data[data.length - 1].id);
+			}
+			setHasMore(data.length === PAGE_SIZE);
+		} catch (err) {
+			console.error(err);
+			isPrependingRef.current = false;
+		} finally {
+			setLoadingMore(false);
+		}
+	};
 
 	// Precompute grouping: is this message the first in a run from the same sender?
 	const withGrouping = useMemo(() => {
@@ -94,7 +130,6 @@ export default function Home() {
 			return { ...msg, isGroupStart };
 		});
 	}, [chatLog]);
-
 	const handleKeyDown = (e) => {
 		if (e.key === 'Enter') sendMessage();
 	};
@@ -104,7 +139,6 @@ export default function Home() {
 			setMessage('');
 		}
 	};
-
 	return (
 		<div className="h-screen flex">
 			<div className="h-full w-90 bg-surface-a20"></div>
@@ -113,6 +147,17 @@ export default function Home() {
 					ref={scrollRef}
 					className="h-full overflow-y-auto px-6 py-4 space-y-1"
 				>
+					{hasMore && (
+						<li className="flex justify-center pb-2">
+							<button
+								onClick={loadMoreMessages}
+								disabled={loadingMore}
+								className="text-sm text-white/60 hover:text-white disabled:opacity-50 hover:cursor-pointer px-3 py-1.5 rounded-lg bg-surface-a20"
+							>
+								{loadingMore ? 'Loading…' : 'Load more'}
+							</button>
+						</li>
+					)}
 					{withGrouping.map((msg) => {
 						const isOwn = msg.display_name === user?.display_name;
 						return (
@@ -136,7 +181,6 @@ export default function Home() {
 										)}
 									</div>
 								)}
-
 								<div
 									className={`group flex flex-col max-w-lg ${isOwn ? 'items-end' : 'items-start'}`}
 								>
@@ -164,7 +208,6 @@ export default function Home() {
 						);
 					})}
 				</ul>
-
 				<div className="pb-10 pt-10 pl-6 pr-6 bg-surface-a10 w-full flex items-center gap-4">
 					<input
 						className="flex-1 bg-surface-a20 placeholder:text-white/60 text-white text-2xl rounded-xl px-3 py-5 border border-transparent focus:outline-none focus:border-white"
