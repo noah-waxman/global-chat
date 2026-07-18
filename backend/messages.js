@@ -1,19 +1,24 @@
 const db = require("./db");
 
-const insertMessage = async (userId, message_text) => {
+const insertMessage = async (userId, messageText) => {
   try {
-    const message = await db.one(
-      `
-        INSERT INTO Messages (created_by, message_text)
-        VALUES ($1, $2)
-        RETURNING id
-        `,
-      [userId, message_text],
+    return await db.one(
+      `INSERT INTO Messages (created_by, message_text)
+       VALUES ($1, $2)
+       RETURNING id, created_at, created_by, message_text`,
+      [userId, messageText],
     );
-    return message;
   } catch (error) {
     throw error;
   }
 };
 
-module.exports = { insertMessage };
+const getMessageById = async (id) => {
+  try {
+    return await db.oneOrNone(`SELECT * FROM Messages WHERE id = $1`, [id]);
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = { insertMessage, getMessageById };

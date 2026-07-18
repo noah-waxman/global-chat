@@ -29,10 +29,14 @@ export default function Home() {
 		socket.on('receive_message', (data) => {
 			setChatLog((prev) => [...prev, data]);
 		});
+		socket.on('error_message', (msg) => {
+			alert(msg);
+		});
 
 		// Clean up event listeners and disconnect on unmount
 		return () => {
 			socket.off('receive_message');
+			socket.off('error_message');
 			socket.disconnect();
 		};
 	}, [user, navigate]);
@@ -43,20 +47,9 @@ export default function Home() {
 		}
 	};
 
-	const sendMessage = async () => {
+	const sendMessage = () => {
 		if (message.trim()) {
-			socket.emit('send_message', message);
-			setChatLog((prev) => [...prev, `${user.displayName} ${message}`]);
-			const response = await fetch('/messages', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ message_text: message }),
-				credentials: 'include',
-			});
-			if (!response.ok) {
-				const error = await response.json();
-				alert(error || 'failed to send message');
-			}
+			socket.emit('send_message', { message_text: message });
 			setMessage('');
 		}
 	};
@@ -67,9 +60,9 @@ export default function Home() {
 
 			<div className="w-full flex flex-col">
 				<ul className="h-full">
-					{chatLog.map((msg, i) => (
-						<li className="text-white text-2xl" key={i}>
-							{msg}
+					{chatLog.map((msg) => (
+						<li className="text-white text-2xl" key={msg.id}>
+							<strong>{msg.display_name}</strong>: {msg.message_text}
 						</li>
 					))}
 				</ul>

@@ -5,6 +5,7 @@ const pgSession = require("connect-pg-simple")(session);
 const cors = require("cors");
 const db = require("./db");
 const users = require("./users");
+const { hasPermission, requirePermission } = require("./permissions");
 const messages = require("./messages");
 const app = express();
 
@@ -57,8 +58,6 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   const session = socket.request.session;
 
-  console.log(session);
-
   if (!session || !session.user) {
     console.error("Unauthenticated socket tried to connect.");
     return socket.disconnect(true);
@@ -66,11 +65,42 @@ io.on("connection", (socket) => {
 
   console.log(`Authenticated user connected: ${session.user.displayName}`);
 
-  socket.on("send_message", (data) => {
-    socket.broadcast.emit("receive_message", data);
+  socket.on("send_message", async (data) => {
+    try {
+      const allowed = await hasPermission(
+        session.user.roles,
+        "messages",
+        "create",
+      );
+      if (!allowed) {
+        socket.emit(
+          "error_message",
+          "You do not have permission to send messages",
+        );
+        return;
+      }
+
+      const messageText = typeof data === "string" ? data : data?.message_text;
+      if (!messageText || !messageText.trim()) return;
+
+      const message = await messages.insertMessage(
+        session.user.id,
+        messageText,
+      );
+
+      io.emit("receive_message", {
+        id: message.id,
+        message_text: message.message_text,
+        created_at: message.created_at,
+        created_by: session.user.id,
+        display_name: session.user.displayName,
+      });
+    } catch (err) {
+      console.error("send_message error:", err);
+      socket.emit("error_message", "Failed to send message");
+    }
   });
 
-  // Handle user disconnects
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
@@ -81,24 +111,20 @@ app.post("/auth/register", async (req, res, next) => {
     const saltRounds = 10;
     const { displayName, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
     const newUser = await users.insertUser(displayName, hashedPassword, email);
-
     if (!newUser || !newUser.id) {
       return res.status(400).json({ error: "Error during user creation" });
     }
-
     req.session.regenerate(function (err) {
       if (err) {
         return next(err);
       }
-
       req.session.user = {
         id: newUser.id,
         displayName: newUser.display_name,
         email: newUser.email,
+        roles: newUser.roles,
       };
-
       req.session.save(function (err) {
         if (err) {
           return next(err);
@@ -120,37 +146,31 @@ app.post("/auth/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await users.getUserByEmail(email);
-
     if (!user || !user.id) {
       return res.status(404).json({
         error: "User not found",
       });
     }
-
     const isMatch = await bcrypt.compare(password, user.password_hash);
-
     if (!isMatch) {
       return res.status(401).json({
         error: "Invalid email or password",
       });
     }
-
     req.session.regenerate((err) => {
       if (err) {
         return next(err);
       }
-
       req.session.user = {
         id: user.id,
         displayName: user.display_name,
         email: user.email,
+        roles: user.roles,
       };
-
       req.session.save((err) => {
         if (err) {
           return next(err);
         }
-
         return res.status(200).json(req.session.user);
       });
     });
